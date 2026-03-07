@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jazz POS - Professional Retail System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --accent: #6366f1;
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 88px;
+        }
+
+        .dark {
+            --glass-bg: rgba(15, 23, 42, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent: #818cf8;
+            color: #f8fafc;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #1e293b;
+            transition: all 0.3s ease;
+        }
+
+        body.dark {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-link.active {
+            background: var(--accent);
+            color: white !important;
+            box-shadow: 0 8px 20px -6px rgba(99, 102, 241, 0.5);
+        }
+
+        .sidebar-link:hover:not(.active) {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        #sidebar-menu {
+            width: var(--sidebar-width);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #sidebar-menu.collapsed {
+            width: var(--sidebar-collapsed-width);
+        }
+
+        #sidebar-menu.collapsed .sidebar-text, 
+        #sidebar-menu.collapsed .sidebar-footer {
+            display: none;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 10px; }
+
+        .page-section { display: none; }
+        .page-section.active { display: block; animation: slideUp 0.4s ease-out; }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media print {
+            .no-print { display: none !important; }
+            #receipt-modal { 
+                position: static; 
+                display: block !important; 
+                background: white; 
+                padding: 0;
+                box-shadow: none;
+            }
+            body { background: white; }
+        }
+    </style>
+</head>
+<body class="overflow-hidden">
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar-menu" class="glass-panel border-r no-print flex flex-col z-50">
+            <div class="p-6 flex items-center justify-between">
+                <div class="flex items-center gap-3 sidebar-text">
+                    <div class="bg-indigo-600 p-2 rounded-xl text-white">
+                        <i class="fas fa-bolt text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 id="display-store-name" class="text-lg font-extrabold tracking-tight">Jazz POS</h1>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Retail Pro v2.0</p>
+                    </div>
+                </div>
+                <button onclick="toggleSidebar()" class="w-8 h-8 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-all">
+                    <i id="sidebar-icon" class="fas fa-chevron-left text-slate-400"></i>
+                </button>
+            </div>
+
+            <nav class="px-4 space-y-2 mt-6 flex-1">
+                <button onclick="showSection('dashboard')" class="sidebar-link active w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-slate-500 font-bold text-sm transition-all">
+                    <i class="fas fa-chart-line w-5"></i> <span class="sidebar-text">Dashboard</span>
+                </button>
+                <button onclick="showSection('pos')" class="sidebar-link w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-slate-500 font-bold text-sm transition-all">
+                    <i class="fas fa-shopping-cart w-5"></i> <span class="sidebar-text">Sales Terminal</span>
+                </button>
+                <button onclick="showSection('inventory')" class="sidebar-link w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-slate-500 font-bold text-sm transition-all">
+                    <i class="fas fa-boxes w-5"></i> <span class="sidebar-text">Inventory</span>
+                </button>
+                <button onclick="showSection('orders')" class="sidebar-link w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-slate-500 font-bold text-sm transition-all">
+                    <i class="fas fa-history w-5"></i> <span class="sidebar-text">Order History</span>
+                </button>
+                <button onclick="showSection('settings')" class="sidebar-link w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-slate-500 font-bold text-sm transition-all">
+                    <i class="fas fa-cog w-5"></i> <span class="sidebar-text">Settings</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer p-6 border-t border-slate-200 dark:border-slate-700">
+                <p class="text-[10px] text-center text-slate-400 font-bold uppercase">Created by Jasmine Karki</p>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="flex-1 flex flex-col min-w-0 bg-transparent">
+            <!-- Global Header -->
+            <header class="h-20 flex items-center justify-between px-8 no-print border-b border-white/20">
+                <div>
+                    <h2 id="page-title" class="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Dashboard</h2>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="text-right hidden sm:block">
+                        <p id="live-time" class="text-sm font-black text-indigo-600">00:00:00 PM</p>
+                        <p id="live-date" class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Loading...</p>
+                    </div>
+                    <button onclick="toggleDarkMode()" class="w-10 h-10 glass-panel rounded-xl flex items-center justify-center text-slate-500 hover:text-indigo-600 transition-colors">
+                        <i id="dark-mode-icon" class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-8">
+                
+                <!-- Dashboard -->
+                <section id="dashboard" class="page-section active">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+                        <div class="glass-panel p-6 rounded-[2rem] border-l-4 border-l-indigo-500">
+                            <p class="text-xs font-bold text-slate-400 uppercase mb-1">Today's Revenue</p>
+                            <h3 id="dash-revenue" class="text-3xl font-black text-slate-800 dark:text-white">$0.00</h3>
+                        </div>
+                        <div class="glass-panel p-6 rounded-[2rem] border-l-4 border-l-emerald-500">
+                            <p class="text-xs font-bold text-slate-400 uppercase mb-1">Total Sales</p>
+                            <h3 id="dash-orders" class="text-3xl font-black text-slate-800 dark:text-white">0</h3>
+                        </div>
+                        <div class="glass-panel p-6 rounded-[2rem] border-l-4 border-l-amber-500">
+                            <p class="text-xs font-bold text-slate-400 uppercase mb-1">Items in Stock</p>
+                            <h3 id="dash-items" class="text-3xl font-black text-slate-800 dark:text-white">0</h3>
+                        </div>
+                        <div class="glass-panel p-6 rounded-[2rem] border-l-4 border-l-rose-500">
+                            <p class="text-xs font-bold text-slate-400 uppercase mb-1">Low Stock Alerts</p>
+                            <h3 id="dash-low-stock" class="text-3xl font-black text-slate-800 dark:text-white">0</h3>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2 glass-panel rounded-[2.5rem] overflow-hidden">
+                            <div class="p-6 border-b border-white/10 flex justify-between items-center">
+                                <h4 class="font-black uppercase text-sm tracking-widest text-slate-400">Recent Transactions</h4>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left">
+                                    <thead class="bg-slate-50 dark:bg-slate-800/50 text-[10px] uppercase font-black text-slate-400">
+                                        <tr>
+                                            <th class="px-6 py-4">ID</th>
+                                            <th class="px-6 py-4">Time</th>
+                                            <th class="px-6 py-4 text-right">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dash-recent-list" class="divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                                        <!-- Rows injected by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="glass-panel rounded-[2.5rem] p-6">
+                            <h4 class="font-black uppercase text-sm tracking-widest text-slate-400 mb-6">Top Selling</h4>
+                            <div id="dash-top-products" class="space-y-4">
+                                <!-- Products injected by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- POS Terminal -->
+                <section id="pos" class="page-section h-full">
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 h-full items-start">
+                        <!-- Left: Product Selection -->
+                        <div class="xl:col-span-8 space-y-6">
+                            <div class="flex flex-col md:flex-row gap-4">
+                                <div class="relative flex-1">
+                                    <i class="fas fa-search absolute left-5 top-1/2 -translate-y-1/2 text-slate-300"></i>
+                                    <input type="text" id="pos-search" oninput="renderPOS()" placeholder="Search items or scan barcode..." class="w-full pl-14 pr-6 py-4 rounded-2xl glass-panel focus:ring-2 focus:ring-indigo-500 outline-none">
+                                </div>
+                                <select id="pos-filter" onchange="renderPOS()" class="px-6 py-4 rounded-2xl glass-panel outline-none font-bold text-slate-500">
+                                    <option value="All">All Categories</option>
+                                </select>
+                            </div>
+                            <div id="pos-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto max-h-[65vh] pr-2 custom-scrollbar">
+                                <!-- Cards injected by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Right: Cart & Checkout -->
+                        <div class="xl:col-span-4 glass-panel rounded-[2.5rem] flex flex-col h-full overflow-hidden shadow-2xl">
+                            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-indigo-600/5">
+                                <h3 class="font-black uppercase tracking-tighter text-lg text-indigo-900 dark:text-indigo-400">Current Order</h3>
+                                <button onclick="clearCart()" class="text-[10px] font-black uppercase text-rose-500 hover:bg-rose-50 px-3 py-1 rounded-full transition-colors">Clear</button>
+                            </div>
+                            
+                            <div id="cart-items" class="flex-1 overflow-y-auto p-4 space-y-3 min-h-[300px] custom-scrollbar">
+                                <!-- Cart rows injected by JS -->
+                            </div>
+
+                            <div class="p-6 bg-slate-50 dark:bg-slate-900/50 border-t border-white/10 space-y-4">
+                                <div class="space-y-2 text-sm font-bold">
+                                    <div class="flex justify-between text-slate-400">
+                                        <span>Subtotal</span>
+                                        <span id="cart-subtotal">$0.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-slate-400">
+                                        <span>Tax (13%)</span>
+                                        <span id="cart-tax">$0.00</span>
+                                    </div>
+                                    <div class="flex justify-between text-2xl font-black text-indigo-600 pt-2 border-t border-slate-200 dark:border-slate-700">
+                                        <span>Total</span>
+                                        <span id="cart-total">$0.00</span>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-3">
+                                    <div class="relative">
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-300">$</span>
+                                        <input type="number" id="cash-received" oninput="calculateChange()" placeholder="Amount Tendered" class="w-full pl-10 pr-4 py-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-black text-xl outline-none text-indigo-600">
+                                    </div>
+                                    <div class="flex justify-between px-2 text-xs font-black uppercase text-emerald-500">
+                                        <span>Change Due</span>
+                                        <span id="cash-change">$0.00</span>
+                                    </div>
+                                </div>
+
+                                <button onclick="processOrder()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-2xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95 uppercase tracking-widest text-sm">
+                                    Complete Transaction
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Inventory Management -->
+                <section id="inventory" class="page-section">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                        <h3 class="text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">Product Inventory</h3>
+                        <button onclick="openProductModal()" class="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-sm uppercase shadow-lg flex items-center gap-2 hover:-translate-y-1 transition-all">
+                            <i class="fas fa-plus"></i> New Product
+                        </button>
+                    </div>
+
+                    <div class="glass-panel rounded-[2.5rem] overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-50 dark:bg-slate-800/50 text-[10px] uppercase font-black tracking-widest text-slate-400 border-b border-white/10">
+                                    <tr>
+                                        <th class="px-8 py-6">Product</th>
+                                        <th class="px-8 py-6">Category</th>
+                                        <th class="px-8 py-6">Price</th>
+                                        <th class="px-8 py-6">Stock</th>
+                                        <th class="px-8 py-6 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventory-table" class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <!-- Injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="inventory-empty" class="p-20 text-center hidden">
+                            <i class="fas fa-box-open text-6xl text-slate-200 mb-4"></i>
+                            <p class="text-slate-400 font-bold">No products found</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Order History -->
+                <section id="orders" class="page-section">
+                    <h3 class="text-3xl font-black text-slate-800 dark:text-white uppercase tracking-tighter mb-8">Transaction Logs</h3>
+                    <div class="glass-panel rounded-[2.5rem] overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-50 dark:bg-slate-800/50 text-[10px] uppercase font-black text-slate-400 border-b border-white/10">
+                                <tr>
+                                    <th class="px-8 py-6">Invoice #</th>
+                                    <th class="px-8 py-6">Date & Time</th>
+                                    <th class="px-8 py-6">Items</th>
+                                    <th class="px-8 py-6 text-right">Total Amount</th>
+                                    <th class="px-8 py-6 text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table" class="divide-y divide-slate-100 dark:divide-slate-800">
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Settings -->
+                <section id="settings" class="page-section">
+                    <div class="max-w-2xl space-y-8">
+                        <div class="glass-panel p-8 rounded-[2.5rem] space-y-6">
+                            <h4 class="text-xl font-black text-indigo-600 uppercase tracking-tight">Store Preferences</h4>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Business Name</label>
+                                    <input type="text" id="set-store-name" onchange="updateSettings()" class="w-full p-4 rounded-2xl glass-panel outline-none focus:ring-2 focus:ring-indigo-500">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Tax Rate (%)</label>
+                                        <input type="number" id="set-tax-rate" onchange="updateSettings()" class="w-full p-4 rounded-2xl glass-panel outline-none">
+                                    </div>
+                                    <div>
+                                        <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Currency</label>
+                                        <input type="text" id="set-currency" onchange="updateSettings()" class="w-full p-4 rounded-2xl glass-panel outline-none">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-8 rounded-[2.5rem] space-y-6">
+                            <h4 class="text-xl font-black text-rose-500 uppercase tracking-tight">Danger Zone</h4>
+                            <p class="text-sm text-slate-500">Resetting the system will permanently delete all your products, sales history, and configuration.</p>
+                            <button onclick="resetSystem()" class="bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-black px-6 py-4 rounded-2xl uppercase text-xs hover:bg-rose-600 hover:text-white transition-all">
+                                Perform Factory Reset
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Product Modal -->
+    <div id="product-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[100] p-4 no-print">
+        <div class="glass-panel bg-white/95 dark:bg-slate-900/95 rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in duration-300">
+            <div class="p-8 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                <h3 class="text-2xl font-black uppercase tracking-tighter" id="modal-title">Add Product</h3>
+                <button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form onsubmit="handleProductSubmit(event)" class="p-8 space-y-5">
+                <input type="hidden" id="prod-id">
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Item Name</label>
+                    <input type="text" id="prod-name" required class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 border-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Price</label>
+                        <input type="number" step="0.01" id="prod-price" required class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 outline-none border-none">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Initial Stock</label>
+                        <input type="number" id="prod-stock" required class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 outline-none border-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black uppercase text-slate-400 block mb-2">Category</label>
+                    <input type="text" id="prod-category" required list="cat-list" class="w-full p-4 rounded-2xl bg-slate-100 dark:bg-slate-800 outline-none border-none">
+                    <datalist id="cat-list">
+                        <option value="Electronics">
+                        <option value="Food & Beverage">
+                        <option value="Clothing">
+                        <option value="Home Decor">
+                    </datalist>
+                </div>
+                <div class="pt-4">
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl shadow-lg shadow-indigo-100 dark:shadow-none hover:bg-indigo-700 transition-all uppercase tracking-widest">
+                        Save Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div id="receipt-container" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md hidden items-center justify-center z-[200] p-4">
+        <div id="receipt-modal" class="bg-white p-10 w-full max-w-sm rounded-[2rem] shadow-2xl font-mono text-[11px] text-slate-800 relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-indigo-600 no-print"></div>
+            
+            <div class="text-center space-y-1 mb-8">
+                <h2 id="r-store-name" class="text-2xl font-black tracking-tighter">JAZZ POS</h2>
+                <p class="text-[9px] font-bold text-slate-400 uppercase">Premium Retail Solutions</p>
+                <div class="py-2 border-y border-dashed border-slate-200 mt-4 flex justify-between text-[8px] font-bold uppercase text-slate-400">
+                    <span id="r-date">01/01/2024</span>
+                    <span id="r-id">#INV-00000</span>
+                </div>
+            </div>
+
+            <div class="space-y-3 mb-8">
+                <div class="flex justify-between font-black text-slate-400 border-b border-slate-100 pb-2 mb-2">
+                    <span>ITEM</span>
+                    <span>TOTAL</span>
+                </div>
+                <div id="r-items" class="space-y-2">
+                    <!-- Injected items -->
+                </div>
+            </div>
+
+            <div class="space-y-2 pt-4 border-t-2 border-dashed border-slate-200">
+                <div class="flex justify-between font-bold">
+                    <span>Subtotal</span>
+                    <span id="r-subtotal">$0.00</span>
+                </div>
+                <div class="flex justify-between font-bold text-slate-400">
+                    <span>Tax (13%)</span>
+                    <span id="r-tax">$0.00</span>
+                </div>
+                <div class="flex justify-between text-base font-black border-t border-slate-100 pt-2">
+                    <span>TOTAL</span>
+                    <span id="r-total">$0.00</span>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-100 space-y-1 text-slate-400 font-bold">
+                <div class="flex justify-between">
+                    <span>CASH PAID</span>
+                    <span id="r-paid">$0.00</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>CHANGE DUE</span>
+                    <span id="r-change">$0.00</span>
+                </div>
+            </div>
+
+            <div class="text-center mt-10 space-y-2">
+                <p class="font-black uppercase tracking-widest text-[9px]">Thank you for shopping!</p>
+                <p class="text-[8px] text-slate-300">Created by Jasmine Karki</p>
+            </div>
+
+            <div class="mt-8 flex gap-3 no-print">
+                <button onclick="window.print()" class="flex-1 bg-slate-900 text-white py-4 rounded-xl font-black uppercase text-[10px] tracking-widest">Print Receipt</button>
+                <button onclick="closeReceipt()" class="flex-1 border-2 border-slate-100 text-slate-400 py-4 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-50">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 px-8 py-4 glass-panel dark:bg-indigo-600 bg-slate-900 text-white rounded-2xl font-black shadow-2xl z-[300] opacity-0 pointer-events-none transition-all duration-300 translate-y-10 uppercase tracking-widest text-xs">
+        <i class="fas fa-check-circle mr-2 text-emerald-400"></i>
+        <span id="toast-msg">Operation Success</span>
+    </div>
+
+    <script>
+        /**
+         * Jazz POS - Professional State Management
+         * Created by Jasmine Karki
+         */
+        
+        // Initial Sample Data
+        const SAMPLE_PRODUCTS = [
+            { id: '101', name: 'Fresh Espresso', price: 4.50, stock: 50, category: 'Food & Beverage' },
+            { id: '102', name: 'Wireless Headphones', price: 89.99, stock: 12, category: 'Electronics' },
+            { id: '103', name: 'Cotton T-Shirt', price: 24.00, stock: 25, category: 'Clothing' },
+            { id: '104', name: 'Ceramic Vase', price: 35.50, stock: 8, category: 'Home Decor' }
+        ];
+
+        let state = {
+            products: JSON.parse(localStorage.getItem('jazz_pro_products')) || SAMPLE_PRODUCTS,
+            orders: JSON.parse(localStorage.getItem('jazz_pro_orders')) || [],
+            cart: [],
+            settings: JSON.parse(localStorage.getItem('jazz_pro_settings')) || {
+                storeName: 'Jazz POS',
+                taxRate: 13,
+                currency: '$',
+                darkMode: false,
+                sidebarCollapsed: false
+            }
+        };
+
+        // --- Core Functions ---
+        
+        function saveToStorage() {
+            localStorage.setItem('jazz_pro_products', JSON.stringify(state.products));
+            localStorage.setItem('jazz_pro_orders', JSON.stringify(state.orders));
+            localStorage.setItem('jazz_pro_settings', JSON.stringify(state.settings));
+        }
+
+        function showToast(msg, type = "success") {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-10');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-10');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 3000);
+        }
+
+        function formatMoney(amount) {
+            return state.settings.currency + parseFloat(amount).toFixed(2);
+        }
+
+        // --- UI Interactions ---
+
+        function toggleSidebar() {
+            state.settings.sidebarCollapsed = !state.settings.sidebarCollapsed;
+            const menu = document.getElementById('sidebar-menu');
+            const icon = document.getElementById('sidebar-icon');
+            if(state.settings.sidebarCollapsed) {
+                menu.classList.add('collapsed');
+                icon.className = 'fas fa-chevron-right text-slate-400';
+            } else {
+                menu.classList.remove('collapsed');
+                icon.className = 'fas fa-chevron-left text-slate-400';
+            }
+            saveToStorage();
+        }
+
+        function toggleDarkMode() {
+            state.settings.darkMode = !state.settings.darkMode;
+            applyTheme();
+            saveToStorage();
+        }
+
+        function applyTheme() {
+            document.body.classList.toggle('dark', state.settings.darkMode);
+            document.getElementById('dark-mode-icon').className = state.settings.darkMode ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        function showSection(id) {
+            document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+            
+            const activeSection = document.getElementById(id);
+            activeSection.classList.add('active');
+            
+            // Highlight sidebar link
+            const links = document.querySelectorAll('.sidebar-link');
+            links.forEach(l => {
+                if(l.getAttribute('onclick').includes(id)) l.classList.add('active');
+            });
+
+            document.getElementById('page-title').innerText = id === 'pos' ? 'Sales Terminal' : id;
+
+            // Trigger specific renders
+            if(id === 'dashboard') renderDashboard();
+            if(id === 'pos') renderPOS();
+            if(id === 'inventory') renderInventory();
+            if(id === 'orders') renderOrders();
+        }
+
+        // --- Dashboard Logic ---
+
+        function renderDashboard() {
+            const today = new Date().toLocaleDateString();
+            const todayOrders = state.orders.filter(o => new Date(o.date).toLocaleDateString() === today);
+            
+            const revenue = todayOrders.reduce((acc, curr) => acc + curr.total, 0);
+            const lowStock = state.products.filter(p => p.stock < 10).length;
+
+            document.getElementById('dash-revenue').innerText = formatMoney(revenue);
+            document.getElementById('dash-orders').innerText = todayOrders.length;
+            document.getElementById('dash-items').innerText = state.products.length;
+            document.getElementById('dash-low-stock').innerText = lowStock;
+
+            // Recent List
+            const recentContainer = document.getElementById('dash-recent-list');
+            recentContainer.innerHTML = state.orders.slice(-5).reverse().map(o => `
+                <tr>
+                    <td class="px-6 py-4 font-black text-indigo-600">#${o.id.slice(-5)}</td>
+                    <td class="px-6 py-4 text-slate-400 font-bold">${new Date(o.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
+                    <td class="px-6 py-4 text-right font-black">${formatMoney(o.total)}</td>
+                </tr>
+            `).join('');
+
+            // Top Products Simplified Logic
+            const topContainer = document.getElementById('dash-top-products');
+            const sorted = [...state.products].sort((a,b) => b.price - a.price).slice(0, 4);
+            topContainer.innerHTML = sorted.map(p => `
+                <div class="flex justify-between items-center p-4 bg-white/40 dark:bg-slate-800/40 rounded-2xl">
+                    <div>
+                        <p class="text-xs font-black">${p.name}</p>
+                        <p class="text-[9px] text-slate-400 uppercase font-bold">${p.category}</p>
+                    </div>
+                    <span class="text-xs font-black text-indigo-600">${formatMoney(p.price)}</span>
+                </div>
+            `).join('');
+        }
+
+        // --- Inventory Logic ---
+
+        function renderInventory() {
+            const table = document.getElementById('inventory-table');
+            const empty = document.getElementById('inventory-empty');
+            
+            if(state.products.length === 0) {
+                table.innerHTML = "";
+                empty.classList.remove('hidden');
+                return;
+            }
+            empty.classList.add('hidden');
+
+            table.innerHTML = state.products.map(p => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                    <td class="px-8 py-6">
+                        <div class="font-black text-slate-800 dark:text-white">${p.name}</div>
+                        <div class="text-[9px] text-slate-400 font-bold uppercase">SKU: ${p.id}</div>
+                    </td>
+                    <td class="px-8 py-6">
+                        <span class="px-3 py-1 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded-full uppercase">
+                            ${p.category}
+                        </span>
+                    </td>
+                    <td class="px-8 py-6 font-black text-slate-600 dark:text-slate-300">${formatMoney(p.price)}</td>
+                    <td class="px-8 py-6">
+                        <div class="flex items-center gap-2">
+                            <span class="font-black ${p.stock < 10 ? 'text-rose-500' : 'text-slate-800 dark:text-white'}">${p.stock}</span>
+                            ${p.stock < 10 ? '<i class="fas fa-exclamation-triangle text-rose-500 text-[10px]"></i>' : ''}
+                        </div>
+                    </td>
+                    <td class="px-8 py-6 text-right">
+                        <div class="flex justify-end gap-2">
+                            <button onclick="editProduct('${p.id}')" class="w-9 h-9 flex items-center justify-center bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all"><i class="fas fa-edit text-xs"></i></button>
+                            <button onclick="deleteProduct('${p.id}')" class="w-9 h-9 flex items-center justify-center bg-rose-50 dark:bg-rose-900/30 text-rose-600 rounded-xl hover:bg-rose-600 hover:text-white transition-all"><i class="fas fa-trash text-xs"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            // Update filters in POS
+            const categories = ['All', ...new Set(state.products.map(p => p.category))];
+            document.getElementById('pos-filter').innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function openProductModal(id = null) {
+            const modal = document.getElementById('product-modal');
+            const title = document.getElementById('modal-title');
+            modal.classList.replace('hidden', 'flex');
+            
+            if(id) {
+                const p = state.products.find(x => x.id === id);
+                title.innerText = "Edit Product";
+                document.getElementById('prod-id').value = p.id;
+                document.getElementById('prod-name').value = p.name;
+                document.getElementById('prod-price').value = p.price;
+                document.getElementById('prod-stock').value = p.stock;
+                document.getElementById('prod-category').value = p.category;
+            } else {
+                title.innerText = "Add Product";
+                document.getElementById('prod-id').value = "";
+                document.getElementById('prod-name').value = "";
+                document.getElementById('prod-price').value = "";
+                document.getElementById('prod-stock').value = "";
+                document.getElementById('prod-category').value = "";
+            }
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-modal').classList.replace('flex', 'hidden');
+        }
+
+        function handleProductSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('prod-id').value;
+            const product = {
+                id: id || Date.now().toString(),
+                name: document.getElementById('prod-name').value,
+                price: parseFloat(document.getElementById('prod-price').value),
+                stock: parseInt(document.getElementById('prod-stock').value),
+                category: document.getElementById('prod-category').value
+            };
+
+            if(id) {
+                const idx = state.products.findIndex(p => p.id === id);
+                state.products[idx] = product;
+                showToast("Product Updated");
+            } else {
+                state.products.push(product);
+                showToast("Product Created");
+            }
+
+            saveToStorage();
+            closeProductModal();
+            renderInventory();
+        }
+
+        function editProduct(id) { openProductModal(id); }
+
+        function deleteProduct(id) {
+            if(confirm("Are you sure you want to remove this item?")) {
+                state.products = state.products.filter(p => p.id !== id);
+                saveToStorage();
+                renderInventory();
+                showToast("Product Deleted");
+            }
+        }
+
+        // --- POS Logic ---
+
+        function renderPOS() {
+            const grid = document.getElementById('pos-grid');
+            const search = document.getElementById('pos-search').value.toLowerCase();
+            const category = document.getElementById('pos-filter').value;
+
+            const filtered = state.products.filter(p => {
+                const matchesSearch = p.name.toLowerCase().includes(search) || p.id.includes(search);
+                const matchesCat = category === 'All' || p.category === category;
+                return matchesSearch && matchesCat;
+            });
+
+            grid.innerHTML = filtered.map(p => `
+                <div onclick="addToCart('${p.id}')" class="glass-panel p-5 rounded-[2rem] cursor-pointer hover:bg-white/40 dark:hover:bg-slate-800 transition-all border-white/20 group relative overflow-hidden">
+                    <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all">
+                        <i class="fas fa-plus-circle text-indigo-600"></i>
+                    </div>
+                    <div class="text-[9px] font-black uppercase text-indigo-500 mb-1">${p.category}</div>
+                    <h5 class="font-bold text-slate-800 dark:text-white truncate">${p.name}</h5>
+                    <div class="mt-4 flex justify-between items-center">
+                        <span class="text-indigo-600 font-black">${formatMoney(p.price)}</span>
+                        <span class="text-[9px] font-bold ${p.stock < 5 ? 'text-rose-500' : 'text-slate-400'} uppercase">Stock: ${p.stock}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(id) {
+            const product = state.products.find(p => p.id === id);
+            if(product.stock <= 0) {
+                showToast("Item out of stock!", "error");
+                return;
+            }
+
+            const inCart = state.cart.find(c => c.id === id);
+            if(inCart) {
+                if(inCart.qty < product.stock) {
+                    inCart.qty++;
+                } else {
+                    showToast("Insufficient stock available");
+                }
+            } else {
+                state.cart.push({...product, qty: 1});
+            }
+            renderCart();
+        }
+
+        function updateCartQty(id, delta) {
+            const item = state.cart.find(c => c.id === id);
+            const product = state.products.find(p => p.id === id);
+
+            if(delta > 0 && item.qty >= product.stock) {
+                showToast("Cannot exceed stock limit");
+                return;
+            }
+
+            item.qty += delta;
+            if(item.qty <= 0) {
+                state.cart = state.cart.filter(c => c.id !== id);
+            }
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-items');
+            container.innerHTML = state.cart.map(item => `
+                <div class="flex justify-between items-center bg-white/50 dark:bg-slate-800/50 p-4 rounded-2xl border border-white/10">
+                    <div class="flex-1 truncate pr-3">
+                        <p class="text-xs font-black truncate">${item.name}</p>
+                        <p class="text-[10px] text-indigo-600 font-bold">${formatMoney(item.price)}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="updateCartQty('${item.id}', -1)" class="w-7 h-7 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg text-xs"><i class="fas fa-minus"></i></button>
+                        <span class="text-xs font-black w-4 text-center">${item.qty}</span>
+                        <button onclick="updateCartQty('${item.id}', 1)" class="w-7 h-7 flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg text-xs"><i class="fas fa-plus"></i></button>
+                    </div>
+                </div>
+            `).join('');
+
+            calculateTotals();
+        }
+
+        function calculateTotals() {
+            const subtotal = state.cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
+            const tax = subtotal * (state.settings.taxRate / 100);
+            const total = subtotal + tax;
+
+            document.getElementById('cart-subtotal').innerText = formatMoney(subtotal);
+            document.getElementById('cart-tax').innerText = formatMoney(tax);
+            document.getElementById('cart-total').innerText = formatMoney(total);
+            calculateChange();
+        }
+
+        function calculateChange() {
+            const total = parseFloat(document.getElementById('cart-total').innerText.replace(state.settings.currency, ''));
+            const paid = parseFloat(document.getElementById('cash-received').value) || 0;
+            const change = Math.max(0, paid - total);
+            document.getElementById('cash-change').innerText = formatMoney(change);
+        }
+
+        function clearCart() {
+            state.cart = [];
+            document.getElementById('cash-received').value = "";
+            renderCart();
+        }
+
+        function processOrder() {
+            if(state.cart.length === 0) {
+                showToast("Cart is empty", "error");
+                return;
+            }
+
+            const total = parseFloat(document.getElementById('cart-total').innerText.replace(state.settings.currency, ''));
+            const paid = parseFloat(document.getElementById('cash-received').value) || 0;
+
+            if(paid < total) {
+                showToast("Insufficient payment amount", "error");
+                return;
+            }
+
+            // Create Order
+            const order = {
+                id: 'INV-' + Date.now().toString().slice(-6).toUpperCase(),
+                date: new Date().toISOString(),
+                items: [...state.cart],
+                subtotal: state.cart.reduce((acc, item) => acc + (item.price * item.qty), 0),
+                tax: state.cart.reduce((acc, item) => acc + (item.price * item.qty), 0) * (state.settings.taxRate / 100),
+                total: total,
+                paid: paid,
+                change: paid - total
+            };
+
+            // Deduct Stock
+            state.cart.forEach(item => {
+                const prod = state.products.find(p => p.id === item.id);
+                if(prod) prod.stock -= item.qty;
+            });
+
+            state.orders.push(order);
+            saveToStorage();
+            
+            showReceipt(order);
+            clearCart();
+            showToast("Order Processed Successfully");
+        }
+
+        // --- Receipt Logic ---
+
+        function showReceipt(order) {
+            const container = document.getElementById('receipt-container');
+            container.classList.replace('hidden', 'flex');
+
+            document.getElementById('r-store-name').innerText = state.settings.storeName.toUpperCase();
+            document.getElementById('r-date').innerText = new Date(order.date).toLocaleString();
+            document.getElementById('r-id').innerText = '#' + order.id;
+            
+            document.getElementById('r-items').innerHTML = order.items.map(i => `
+                <div class="flex justify-between">
+                    <span>${i.qty}x ${i.name}</span>
+                    <span>${formatMoney(i.price * i.qty)}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('r-subtotal').innerText = formatMoney(order.subtotal);
+            document.getElementById('r-tax').innerText = formatMoney(order.tax);
+            document.getElementById('r-total').innerText = formatMoney(order.total);
+            document.getElementById('r-paid').innerText = formatMoney(order.paid);
+            document.getElementById('r-change').innerText = formatMoney(order.change);
+        }
+
+        function closeReceipt() {
+            document.getElementById('receipt-container').classList.replace('flex', 'hidden');
+        }
+
+        // --- History & Settings Logic ---
+
+        function renderOrders() {
+            const table = document.getElementById('orders-table');
+            table.innerHTML = state.orders.slice().reverse().map(o => `
+                <tr>
+                    <td class="px-8 py-6 font-black text-indigo-600">#${o.id}</td>
+                    <td class="px-8 py-6 text-slate-400 font-bold text-[10px] uppercase">
+                        ${new Date(o.date).toLocaleDateString()}<br>${new Date(o.date).toLocaleTimeString()}
+                    </td>
+                    <td class="px-8 py-6 font-bold text-slate-600 dark:text-slate-300">
+                        ${o.items.length} items
+                    </td>
+                    <td class="px-8 py-6 text-right font-black text-slate-800 dark:text-white">
+                        ${formatMoney(o.total)}
+                    </td>
+                    <td class="px-8 py-6 text-center">
+                        <button onclick='showReceipt(${JSON.stringify(o)})' class="bg-slate-100 dark:bg-slate-800 p-3 rounded-xl hover:bg-indigo-600 hover:text-white transition-all">
+                            <i class="fas fa-receipt"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function initSettings() {
+            document.getElementById('set-store-name').value = state.settings.storeName;
+            document.getElementById('set-tax-rate').value = state.settings.taxRate;
+            document.getElementById('set-currency').value = state.settings.currency;
+            document.getElementById('display-store-name').innerText = state.settings.storeName;
+        }
+
+        function updateSettings() {
+            state.settings.storeName = document.getElementById('set-store-name').value || 'Jazz POS';
+            state.settings.taxRate = parseFloat(document.getElementById('set-tax-rate').value) || 0;
+            state.settings.currency = document.getElementById('set-currency').value || '$';
+            
+            document.getElementById('display-store-name').innerText = state.settings.storeName;
+            saveToStorage();
+            showToast("Settings Updated");
+        }
+
+        function resetSystem() {
+            if(confirm("DANGER: This will delete everything. Proceed?")) {
+                localStorage.clear();
+                location.reload();
+            }
+        }
+
+        // --- Lifecycle ---
+
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('live-time').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+            document.getElementById('live-date').innerText = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }, 1000);
+
+        window.onload = () => {
+            applyTheme();
+            initSettings();
+            if(state.settings.sidebarCollapsed) {
+                state.settings.sidebarCollapsed = !state.settings.sidebarCollapsed;
+                toggleSidebar();
+            }
+            showSection('dashboard');
+        };
+
+    </script>
+</body>
+</html>

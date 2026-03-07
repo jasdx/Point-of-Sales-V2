@@ -1,4 +1,4 @@
-⚡ JazzPOS: Retail Pro V2.0
+<b>⚡ JazzPOS: Retail Pro V2.0</b>
 
 JazzPOS is a modern, high-performance Point of Sale (POS) system designed for retail excellence. Built with a focus on intuitive user experience and clean aesthetics, it provides business owners with real-time insights, effortless inventory management, and a streamlined sales process.
 

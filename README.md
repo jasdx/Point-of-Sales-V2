@@ -43,7 +43,7 @@ Dark Mode Support: A built-in toggle for comfortable use in any lighting.
 </b>Visual Preview</b>
 
 <b>Dashboard</b>
-![image alt]{
+![image alt]{https://github.com/jasdx/Point-of-Sales-V2/blob/2895659dd9017401beb7301377ae4685bc92518b/Dashboard.png}
 
 Inventory Management
 

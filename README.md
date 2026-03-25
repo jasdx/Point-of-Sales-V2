@@ -40,16 +40,17 @@ Safety First: Includes a "Danger Zone" for factory resets.
 
 Dark Mode Support: A built-in toggle for comfortable use in any lighting.
 
-</b>Visual Preview</b>
+<b>Visual Preview</b>
 
-<b>Dashboard</b>
-![image alt]{https://github.com/jasdx/Point-of-Sales-V2/blob/2895659dd9017401beb7301377ae4685bc92518b/Dashboard.png}
 
-Inventory Management
+<img src="Dashboard.png" alt="dash" width="500">
+<img src="Product-mgmt.png" alt="pro" width="500">
+<img src="Setting.png" alt="set" width="500">
 
-System Settings
 
-</b>Tech Stack</b>
+
+
+<b>Tech Stack</b>
 
 Frontend: HTML5
 

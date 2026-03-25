@@ -45,7 +45,7 @@ Dark Mode Support: A built-in toggle for comfortable use in any lighting.
 
 <img src="Dashboard.png" alt="dash" width="500">
 <img src="Product-mgmt.png" alt="pro" width="500">
-<img src="Setting.png" alt="set" width="500">
+<img src="Settings.png" alt="set" width="500">
 
 
 

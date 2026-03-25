@@ -1,10 +1,10 @@
-⚡ JazzPOS: Retail Pro V2.0
+<b>⚡ JazzPOS: Retail Pro V2.0</b>
 
 JazzPOS is a modern, sleek, and high-performance Point of Sale (POS) system designed for retail excellence. Built with a focus on user experience and visual clarity, it provides business owners with real-time insights, effortless inventory management, and a seamless checkout experience.
 
-🚀 Key Features
+<b>Key Features</b>
 
-📊 Dynamic Dashboard
+<b>Dynamic Dashboard</b>
 
 Get a high-level view of your business health at a glance.
 
@@ -16,7 +16,7 @@ Top Selling Products: Automated list of your most popular items.
 
 Recent Transactions: A live feed of the latest activity in your store.
 
-📦 Robust Inventory Management
+<b> Robust Inventory Management</b>
 
 Maintain a healthy supply chain with our intuitive management suite.
 
@@ -28,7 +28,7 @@ CRUD Operations: Easily add, edit, or delete products with a single click.
 
 Categorization: Tag products (e.g., Electronics, Clothing, Home Decor).
 
-⚙️ Store Personalization
+<b>Store Personalization</b>
 
 Tailor the system to match your business identity.
 
@@ -40,15 +40,16 @@ Safety First: Includes a "Danger Zone" for factory resets.
 
 Dark Mode Support: A built-in toggle for comfortable use in any lighting.
 
-🎨 Visual Preview
+</b>Visual Preview</b>
 
-Dashboard View
+<b>Dashboard</b>
+![image alt]{
 
 Inventory Management
 
 System Settings
 
-🛠️ Tech Stack
+</b>Tech Stack</b>
 
 Frontend: HTML5
 
@@ -60,12 +61,12 @@ Logic: Vanilla js
 
 State Management: Optimized for real-time data reactivity
 
-💻 Installation & Setup
+<b> Installation & Setup</b>
 
 Clone the repository
 
-git clone [https://github.com/yourusername/JazzPOS.git](https://github.com/yourusername/JazzPOS.git)
+git clone https://github.com/jasdx/Point-of-Sales-V2.git
 
 
-Created with ❤️ by Jasmine Karki
-Retail Pro V2.0 - Empowering Small Businesses.
+<b>Created with ❤️ by Jasmine Karki</b>
+
